@@ -3,21 +3,115 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cover Snap</title>
-<link rel="stylesheet" href="./style.css">
+<title>Sunset Cover Studio — GTA-style cover art maker</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<main class="app">
-  <section class="controls">
-    <h1>Cover Snap</h1>
-    <p>A photo and a caption, made into a square cover.</p>
-    <label>Photo <input id="photo" type="file" accept="image/*"></label>
-    <label>Caption <input id="caption" type="text" maxlength="40" value="Sunset Heist"></label>
-    <button id="export" type="button">Export PNG 1080 x 1080</button>
-    <p id="status" role="status"></p>
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">☀</span>
+    <div>
+      <h1>Sunset Cover Studio</h1>
+      <p>Turn your photo into GTA-style cover art. No uploads — everything stays on your machine.</p>
+    </div>
+  </div>
+  <ol class="steps" aria-label="Three steps">
+    <li><b>1</b> Add a photo</li>
+    <li><b>2</b> Pick a layout</li>
+    <li><b>3</b> Export a PNG</li>
+  </ol>
+</header>
+
+<main class="studio">
+  <section class="panel controls" aria-label="Cover controls">
+    <h2>Photos</h2>
+    <div class="row">
+      <label class="button" for="photo-files">Add photos…</label>
+      <input id="photo-files" type="file" accept="image/*" multiple hidden>
+      <button id="sample-boulevard" type="button">Sample: Boulevard</button>
+      <button id="sample-pier" type="button">Sample: Pier</button>
+    </div>
+    <p class="hint" id="photo-count">No photos yet — add one, or try a sample.</p>
+    <div id="photo-strip" class="photo-strip" aria-label="Your photos"></div>
+
+    <h2>Layout</h2>
+    <div id="layout-picker" class="picker" role="group" aria-label="Panel layout"></div>
+
+    <h2>Colour grade</h2>
+    <div id="grade-picker" class="picker" role="group" aria-label="Colour grade"></div>
+
+    <h2>Export size</h2>
+    <div id="size-picker" class="picker" role="group" aria-label="Export size"></div>
+
+    <h2>Caption</h2>
+    <label class="field">Title
+      <input id="caption-title" type="text" value="SUNSET DRIVE" maxlength="24" autocomplete="off">
+    </label>
+    <label class="field">Subtitle
+      <input id="caption-sub" type="text" value="A STORY IN THREE ACTS" maxlength="48" autocomplete="off">
+    </label>
+    <label class="field">Kicker
+      <input id="caption-kicker" type="text" value="SUNSET COVER STUDIO" maxlength="40" autocomplete="off">
+    </label>
+    <div class="row">
+      <label class="field grow">Size
+        <input id="caption-size" type="range" min="60" max="140" value="100">
+      </label>
+      <label class="field">Place
+        <select id="caption-place">
+          <option value="bottom" selected>Bottom</option>
+          <option value="top">Top</option>
+        </select>
+      </label>
+      <label class="field">Ink
+        <select id="caption-ink">
+          <option value="white" selected>White</option>
+          <option value="gold">Gold</option>
+          <option value="pink">Pink</option>
+        </select>
+      </label>
+    </div>
+
+    <h2>Effects</h2>
+    <div class="row checks">
+      <label><input id="fx-sun" type="checkbox" checked> Retro sun</label>
+      <label><input id="fx-palms" type="checkbox" checked> Palm silhouettes</label>
+      <label><input id="fx-dots" type="checkbox"> Print dots</label>
+    </div>
+
+    <div class="export-box">
+      <button id="export-btn" type="button" class="button big">Export PNG</button>
+      <p class="hint" id="export-note">Exports at the size you picked, straight from this page.</p>
+    </div>
   </section>
-  <canvas id="cover" width="1080" height="1080" aria-label="The cover"></canvas>
+
+  <section class="panel stage" aria-label="Cover preview">
+    <div class="stage-head">
+      <h2>Preview</h2>
+      <p class="hint">Click a panel to select it. Drag its photo to move it, scroll to zoom.</p>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="preview" width="1080" height="1080" aria-label="Live cover preview"></canvas>
+    </div>
+    <div class="panel-editor" aria-label="Selected panel">
+      <h3 id="panel-title">Panel 1</h3>
+      <div class="row">
+        <label class="field grow">Photo in this panel
+          <select id="panel-photo"></select>
+        </label>
+        <button id="panel-fit" type="button">Re-centre</button>
+      </div>
+      <label class="field">Zoom
+        <input id="panel-zoom" type="range" min="100" max="250" value="100">
+      </label>
+    </div>
+  </section>
 </main>
-<script type="module" src="./src/main.js"></script>
+
+<footer class="foot">
+  <p>Original art made on your machine. No Rockstar Games logo, artwork or font is used anywhere in this app. Display lettering: Anton, SIL Open Font License.</p>
+</footer>
+
+<script type="module" src="src/main.js"></script>
 </body>
 </html>

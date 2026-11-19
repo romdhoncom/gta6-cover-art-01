@@ -1,5 +1,1 @@
-[
-  { "name": "1-cover.jpg", "query": "?shot=cover&photo=pier&caption=Sunset%20Heist", "w": 1080, "h": 1080 },
-  { "name": "2-editor.jpg", "query": "?shot=editor&photo=boulevard&caption=Boulevard%20Queen", "w": 1280, "h": 720 },
-  { "name": "3-cover.jpg", "query": "?shot=cover&photo=boulevard&caption=Boulevard%20Queen", "w": 1080, "h": 1080 }
-]
+{"screenshots":[{"file":"1-cover.jpg","what":"Exported 1920x1080 cover (Sunset grade, Diagonal layout), scaled to 1280x720"},{"file":"2-editor.jpg","what":"The editor in the browser with a sample photo loaded, Diagonal layout, Sunset grade"},{"file":"3-portrait.jpg","what":"Exported 1080x1350 cover (Neon grade, Quad layout), scaled to 1024x1280"},{"file":"4-square.jpg","what":"Exported 1080x1080 cover (Golden grade, Hero layout), scaled to 1280x1280"}]}
