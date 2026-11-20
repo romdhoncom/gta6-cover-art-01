@@ -1,92 +1,69 @@
-// The photo shelf and what each panel shows. Photos are read on the
-// person's own machine and never uploaded: a file becomes a data URL, a
-// sample becomes an image element pointed at a file under app/.
+// Photo handling for Sunset Cover Studio: loading a person's own photo from
+// their machine, the quick filters, and drag-to-reposition with zoom. The
+// photo is kept as a canvas so the cover renderer can draw it at any size.
 
-/**
- * @typedef {{ id: number, name: string, image: HTMLImageElement }} ShelfPhoto
- * @typedef {{ photoId: number | null, zoom: number, panX: number, panY: number }} PanelPhoto
- */
+// Quick filters: each one is a tint overlay plus a small change to the
+// canvas filter string the renderer applies.
+const PHOTO_FILTERS = {
+  none: { tint: null, extra: '' },
+  warm: { tint: 'rgba(255,150,50,0.14)', extra: 'sepia(0.25)' },
+  cool: { tint: 'rgba(80,140,255,0.14)', extra: 'hue-rotate(-12deg)' },
+  faded: { tint: 'rgba(255,255,255,0.20)', extra: 'contrast(0.85) brightness(1.06)' },
+};
 
-let nextPhotoId = 1;
-
-/** A new, empty shelf. */
-export function createShelf() {
-  return { photos: [], panels: [] };
+// The canvas filter string for the current photo settings.
+function photoFilterString(state, grade) {
+  const parts = [];
+  if (grade.photoFilter) parts.push(grade.photoFilter);
+  parts.push(`brightness(${state.brightness})`);
+  parts.push(`contrast(${state.contrast})`);
+  parts.push(`saturate(${state.saturation})`);
+  const extra = PHOTO_FILTERS[state.filter].extra;
+  if (extra) parts.push(extra);
+  return parts.join(' ');
 }
 
-/** Make sure the shelf has one slot per panel, keeping old slots. */
-export function fitPanelSlots(shelf, panelCount) {
-  while (shelf.panels.length < panelCount) {
-    shelf.panels.push({ photoId: null, zoom: 1, panX: 0, panY: 0 });
+// Draw the current photo cover-fit into rect (x, y, w, h) on ctx, honouring
+// zoom and the drag offset (fractions of the photo's own size). The photo is
+// a canvas; its own aspect decides the fit.
+function drawPhotoInto(ctx, photo, rect, state) {
+  if (!photo) return;
+  const scale = Math.max(rect.w / photo.width, rect.h / photo.height) * state.zoom;
+  const dw = photo.width * scale;
+  const dh = photo.height * scale;
+  const dx = rect.x + (rect.w - dw) / 2 + state.offsetX * dw;
+  const dy = rect.y + (rect.h - dh) / 2 + state.offsetY * dh;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(rect.x, rect.y, rect.w, rect.h);
+  ctx.clip();
+  ctx.drawImage(photo, dx, dy, dw, dh);
+  const tint = PHOTO_FILTERS[state.filter].tint;
+  if (tint) {
+    ctx.fillStyle = tint;
+    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
   }
-  shelf.panels.length = panelCount;
+  ctx.restore();
 }
 
-/** Add an already-loaded image to the shelf and return its id. */
-export function addPhoto(shelf, name, image) {
-  const photo = { id: nextPhotoId++, name, image };
-  shelf.photos.push(photo);
-  return photo.id;
-}
-
-/** Read image files the person picked into the shelf. */
-export function addFiles(shelf, files) {
-  const jobs = [...files]
-    .filter((file) => file.type.startsWith('image/'))
-    .map(
-      (file) =>
-        new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            const image = new Image();
-            image.onload = () => resolve(addPhoto(shelf, file.name, image));
-            image.onerror = () => reject(new Error(`Could not read ${file.name}`));
-            image.src = String(reader.result);
-          };
-          reader.onerror = () => reject(new Error(`Could not read ${file.name}`));
-          reader.readAsDataURL(file);
-        }),
-    );
-  return Promise.all(jobs);
-}
-
-/** Load one of the bundled sample photos into the shelf. */
-export function addSample(shelf, name, url) {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(addPhoto(shelf, name, image));
-    image.onerror = () => reject(new Error(`Could not load ${name}`));
-    image.src = url;
-  });
-}
-
-/** Find a photo on the shelf by id. */
-export function photoById(shelf, id) {
-  return shelf.photos.find((photo) => photo.id === id) || null;
-}
-
-/** Point a panel at a photo, keeping its crop when it already had one. */
-export function assignPhoto(shelf, panelIndex, photoId) {
-  const slot = shelf.panels[panelIndex];
-  if (!slot) return;
-  slot.photoId = photoId;
-}
-
-/** Fill every empty panel with the first photo, in order. */
-export function fillEmptyPanels(shelf) {
-  if (shelf.photos.length === 0) return;
-  shelf.panels.forEach((slot, i) => {
-    if (slot.photoId === null) {
-      slot.photoId = shelf.photos[i % shelf.photos.length].id;
-    }
-  });
-}
-
-/** Reset one panel's crop to centred and unzoomed. */
-export function recenterPanel(shelf, panelIndex) {
-  const slot = shelf.panels[panelIndex];
-  if (!slot) return;
-  slot.zoom = 1;
-  slot.panX = 0;
-  slot.panY = 0;
+// Load a person's photo file into an offscreen canvas, capped at 1600 px on
+// its long side so exports stay fast. Calls done(canvas) when ready.
+function loadPhotoFile(file, done) {
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    const scale = Math.min(1, 1600 / Math.max(img.width, img.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(img.width * scale));
+    canvas.height = Math.max(1, Math.round(img.height * scale));
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    URL.revokeObjectURL(url);
+    done(canvas);
+  };
+  img.onerror = () => {
+    URL.revokeObjectURL(url);
+    done(null);
+  };
+  img.src = url;
 }
